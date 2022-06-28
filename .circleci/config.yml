@@ -1,9 +1,46 @@
 version: 2.1
-
+commands:
+  destroy-environment:
+    description: Destroy front-end and back-end cloudformation stacks given a workflow ID.
+    parameters:
+      workflow_id:
+        type: string   
+    steps:
+      - run:
+          name: Destroy frontend environments
+          when: on_fail
+          command: |
+            aws cloudformation delete-stack \
+                --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
+      - run:
+          name: Destroy backend environments
+          when: on_fail
+          command: |
+            aws cloudformation delete-stack \
+                --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
+  revert-migrations:
+    description: Revert the last migration if successfully run in the current workflow.
+    parameters:
+        workflow_id:
+            type: string     
+    steps:
+      - run:
+          name: Revert migrations
+          when: on_fail
+          command: |
+            # SUCCESS=$(curl -H "token: e52b52de-ee26-41a5-86e8-e8dcc3d995a5" --request GET https://api.memstash.io/values/migration_<< parameters.workflow_id >>)
+            SUCCESS=$(curl --insecure  https://kvdb.io/{}/migration_<< parameters.workflow_id >>)
+            if (( $SUCCESS == 1 ));
+            then
+                cd ~/project/backend
+                npm install
+                npm run migration:revert
+            fi 
+            
 jobs:
   build-frontend:
     docker:
-      - image: circleci/node:13.8.0
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - restore_cache:
@@ -17,10 +54,9 @@ jobs:
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-build
-
   build-backend:
     docker:
-      - image: circleci/node:13.8.0
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - restore_cache:
@@ -28,89 +64,76 @@ jobs:
       - run:
           name: Back-end build
           command: |
-             # Your code here
-             cd backend
-             npm install
-             npm run build
+            cd backend
+            npm install
+            npm run build
       - save_cache:
           paths: [backend/node_modules]
           key: backend-build
-
   test-frontend:
     docker:
-      - image: circleci/node:13.8.0
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - restore_cache:
           keys: [frontend-build]
       - run:
-          name: Build frontend test
+          name: Front-end test
           command: |
             cd frontend
             npm install
             npm run test
-      - save_cache:
-          paths: [frontend/node_modules]
-          key: frontend-build
-
+                
   test-backend:
     docker:
-      - image: circleci/node:13.8.0
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - restore_cache:
           keys: [backend-build]
       - run:
-          name: Build backend test
+          name: Back-end test
           command: |
             cd backend
             npm install
             npm run test
-      - save_cache:
-          paths: [backend/node_modules]
-          key: backend-build
-  
+            
   scan-frontend:
     docker:
-      - image: circleci/node:13.8.0
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - restore_cache:
           keys: [frontend-build]
       - run:
-          name: Check for known security vulnerabilities in the packages
+          name: Front-end scan
           command: |
             cd frontend
             npm install
             npm audit fix --audit-level=critical --force
-      - save_cache:
-          paths: [frontend/node_modules]
-          key: frontend-build
-
+            npm audit --audit-level=critical
+            npm audit fix --force
   scan-backend:
     docker:
-      - image: circleci/node:13.8.0
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - restore_cache:
           keys: [backend-build]
       - run:
-          name: Check for known security vulnerabilities in the packages
+          name: Back-end scan
           command: |
             cd backend
             npm install
             npm audit fix --audit-level=critical --force
-      - save_cache:
-          paths: [backend/node_modules]
-          key: backend-build
-
+            npm audit fix --force
   deploy-infrastructure:
     docker:
       - image: amazon/aws-cli
     steps:
       - checkout
       - run:
-          name: Install tar and gzip
+          name: Install yar and gzip
           command: |
             yum -y install tar gzip
       - run:
@@ -119,22 +142,55 @@ jobs:
             aws cloudformation deploy \
                 --template-file .circleci/files/backend.yml \
                 --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-                --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}" \
-                --tags project=udapeople 
-
-
+                --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
+                --tags project=udapeople
+      - run:
+          name: Ensure front-end infrastructure exist
+          command: |
+            aws cloudformation deploy \
+                --template-file .circleci/files/frontend.yml \
+                --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
+                --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
+                --tags project=udapeople
+      - run:
+          name: Add back-end ip to ansible inventory
+          command: |
+            cd .circleci/ansible
+            aws ec2 describe-instances \
+                  --query 'Reservations[*].Instances[*].PublicIpAddress' \
+                  --filters "Name=tag:project,Values=udapeople" \
+                  --output text >> inventory.txt
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - run:
+          name: save ec2 key pair from circleci env variable
+          command: |
+            cd .circleci/ansible
+            mkdir .ssh/
+            cd .ssh/
+            touch Udacity.pem
+            echo ${EC2_PUBLIC_KEY} >> Udacity.pem
+            chmod 400 Udacity.pem
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .circleci/ansible/inventory.txt
+            - .circleci/ansible/.ssh/Udacity.pem
+      # Here's where you will add some code to rollback on failure      
+            
 workflows:
   default:
     jobs:
       - build-frontend
       - build-backend
       - test-frontend:
-          requires: ['build-frontend']
+          requires: [build-frontend]
       - test-backend:
-          requires: ['build-backend']
-      - scan-frontend:
-          requires: ['build-frontend']
+          requires: [build-backend]
       - scan-backend:
-          requires: ['build-backend']
+          requires: [build-backend]
+      - scan-frontend:
+          requires: [build-frontend]
       - deploy-infrastructure:
           requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+ 
