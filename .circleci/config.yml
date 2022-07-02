@@ -197,7 +197,7 @@ jobs:
             npm install
             npm run migrations > migrations_dump.txt
 
-      - run
+      - run:
           name: View logs
           when: on_fail
           command: |
