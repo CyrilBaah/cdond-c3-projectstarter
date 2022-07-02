@@ -122,6 +122,41 @@ jobs:
                 --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}" \
                 --tags project=udapeople 
 
+  configure-infrastructure:
+    docker:
+      - image: cimg/python:3.9.13
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: [8c:8d:70:7f:43:41:eb:bc:b5:77:1e:96:d7:81:a7:50]
+      - run:
+          name: Install dependencies
+          command: |
+            sudo apt-get update
+            sudo apt -y install python3 tar gzip
+      - run:
+          name: Install aws cli
+          command: |
+            sudo curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            sudo unzip awscliv2.zip
+            sudo ./aws/install
+      - run:
+          name: Install ansible
+          command: |
+            sudo apt update
+            sudo apt install software-properties-common
+            sudo add-apt-repository --yes --update ppa:ansible/ansible
+            sudo apt install ansible
+      - attach_workspace:
+          at: .
+      - run:
+          name: Configure server
+          command: |
+            cd .circleci/ansible
+            ansible-playbook -i inventory.txt configure-server.yml
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+
 workflows:
   default:
     jobs:
