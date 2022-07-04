@@ -174,8 +174,8 @@ jobs:
           command: |
             cd .circleci/ansible
             ansible-playbook -i inventory.txt configure-server.yml
-      - destroy-environment:
-          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      # - destroy-environment:
+      #     workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
   run-migrations:
     docker:
@@ -197,12 +197,12 @@ jobs:
             npm install
             npm run migrations > migrations_dump.txt
 
-      - run:
-          name: View logs
-          when: on_fail
-          command: |
-            cd /home/circleci/.npm/
-            cat 2022-07-02*.log
+      # - run:
+      #     name: View logs
+      #     when: on_fail
+      #     command: |
+      #       cd /home/circleci/.npm/
+      #       cat 2022-07-02*.log
       - run:
           name: Send migration results to memstash
           command: |
