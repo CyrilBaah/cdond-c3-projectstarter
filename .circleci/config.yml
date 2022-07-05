@@ -212,13 +212,14 @@ jobs:
 
   deploy-frontend:
     docker:
-      - image: circleci/node:13.8.0
+      - image: python:3.7-alpine3.11
     steps:
       - checkout
       - run:
           name: Install tar gzip
           command: |
-            sudo apt -y install python3 tar gzip
+            apk add --update nodejs nodejs-npm tar gzip curl
+            pip install awscli
       - attach_workspace:
           at: .
       - run:
