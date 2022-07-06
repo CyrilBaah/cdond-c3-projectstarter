@@ -1,0 +1,12 @@
+---
+- name: "install libraries"
+  shell: |
+    npm install
+
+- name: "stop pm2"
+  shell: |
+    pm2 stop default
+
+- name: "start pm2"
+  shell: |
+    pm2 start npm -- start
