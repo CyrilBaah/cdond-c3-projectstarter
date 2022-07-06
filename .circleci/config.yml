@@ -13,12 +13,12 @@ commands:
           command: |
             aws cloudformation delete-stack \
                 --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
-      - run:
-          name: Destroy backend environments
-          when: on_fail
-          command: |
-            aws cloudformation delete-stack \
-                --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
+      # - run:
+      #     name: Destroy backend environments
+      #     when: on_fail
+      #     command: |
+      #       aws cloudformation delete-stack \
+      #           --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
 
 jobs:
   build-frontend:
@@ -183,8 +183,8 @@ jobs:
           command: |
             cd .circleci/ansible
             ansible-playbook -i inventory.txt configure-server.yml
-      - destroy-environment:
-          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      # - destroy-environment:
+      #     workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
   run-migrations:
     docker:
@@ -216,8 +216,8 @@ jobs:
       #           # If you are using kvdb.io, generate the bucket ID "9GE4jRtKznmVKRfvdBABBe" in your local terminal first
       #           curl https://kvdb.io/LcFmjgqL7QtkPSgdTFjBUi/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
       #       fi
-      - destroy-environment:
-          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      # - destroy-environment:
+      #     workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
   deploy-frontend:
     docker:
@@ -247,27 +247,31 @@ jobs:
             npm run build
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
-      - destroy-environment:
-          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      # - destroy-environment:
+      #     workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
   deploy-backend:
     docker:
-      - image: python:3.7-alpine3.11
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - run:
           name: Install tar gzip
           command: |
-            apk add --update nodejs nodejs-npm tar gzip curl
-            pip install awscli
+            sudo apt -y install python3 tar gzip
       - run:
-          name: Install ansible
+          name: Install awscli ansible
           command: |
-            sudo apt -y install ansible
+            sudo apt-get -y update
+            sudo apt-get -y install awscli ansible
       - attach_workspace:
           at: .
       - add_ssh_keys:
-            fingerprints: [8c:8d:70:7f:43:41:eb:bc:b5:77:1e:96:d7:81:a7:50]
+          fingerprints: [8c:8d:70:7f:43:41:eb:bc:b5:77:1e:96:d7:81:a7:50]
+      - run:
+          name: Install awscli npm node ansible
+          command: |
+            sudo apt -y install awscli ansible
       - run:
           name: Deploy backend
           command: |
@@ -316,5 +320,5 @@ workflows:
           requires: [configure-infrastructure]
       - deploy-frontend:
           requires: [run-migrations]
-      - deploy-backend:
+      - deploy-frontend:
           requires: [run-migrations]
