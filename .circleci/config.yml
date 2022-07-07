@@ -213,8 +213,8 @@ jobs:
             then
                 curl https://kvdb.io/95Qcymt6igqGndV7J54KNM/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
-      # - destroy-environment:
-      #     workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
   deploy-frontend:
     docker:
@@ -319,11 +319,13 @@ jobs:
             export BACKEND_IP=$(aws ec2 describe-instances --filters Name=instance-state-name,Values=running --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
             export API_URL=http://${BACKEND_IP}:3030
             echo "${API_URL}"
-            if curl "${API_URL}/api/status" | grep "ok"; then
+            if curl -s "${API_URL}/api/status" | grep "ok"; then
                 exit 0
             else
                 exit 1
             fi
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
 workflows:
   default:
