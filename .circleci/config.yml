@@ -297,35 +297,34 @@ jobs:
 
   smoke-test:
     docker:
-      - image: cimg/node:13.8.0
+      - image: python:3.7-alpine3.11
     steps:
       - checkout
       - run:
+          name: Install openssh
+          command: |
+            apk add --update openssh && apk add --update curl
+      - run:
           name: Install dependencies
           command: |
-            sudo apt-get -y update
-            sudo apt-get -y install curl nodejs npm awscli
+            apk add --update tar gzip && apk add --update ansible
+            pip install awscli
       - run:
-          name: Get backend url
+          name: Install node
           command: |
-            export BACKEND_IP=$(aws ec2 describe-instances --filters Name=instance-state-name,Values=running --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
-            echo $BACKEND_IP
+            apk add --update nodejs npm
       - run:
           name: Backend smoke test.
           command: |
-            # sudo chmod 777 ./backend.sh
-            # ./backend.sh
-            #Fetch and prepare the BACKEND_IP env var
-            export BACKEND_IP=$(aws ec2 describe-instances --filters Name=instance-state-name,Values=running --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
-            export API_URL=http://${BACKEND_IP}:3030
+            BACKEND_IP=$(aws ec2 describe-instances  --query 'Reservations[*].Instances[*].PublicIpAddress'  --output text)
+            API_URL="http://${BACKEND_IP}:3030/api/status"
             echo "${API_URL}"
-            if curl -s "${API_URL}/api/status" | grep "ok"; then
-                exit 0
+            if curl -s ${API_URL} | grep "ok"
+            then
+                return 0
             else
-                exit 1
+                return 1
             fi
-      - destroy-environment:
-          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
 workflows:
   default:
