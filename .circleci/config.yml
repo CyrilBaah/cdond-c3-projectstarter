@@ -5,7 +5,7 @@ commands:
     description: Destroy front-end and back-end cloudformation stacks given a workflow ID.
     parameters:
       workflow_id:
-        type: string   
+        type: string
     steps:
       - run:
           name: Destroy frontend environments
@@ -49,10 +49,10 @@ jobs:
       - run:
           name: Back-end build
           command: |
-             # Your code here
-             cd backend
-             npm install
-             npm run build
+            # Your code here
+            cd backend
+            npm install
+            npm run build
       - save_cache:
           paths: [backend/node_modules]
           key: backend-build
@@ -90,7 +90,7 @@ jobs:
       - save_cache:
           paths: [backend/node_modules]
           key: backend-build
-  
+
   scan-frontend:
     docker:
       - image: circleci/node:13.8.0
@@ -141,7 +141,7 @@ jobs:
                 --template-file .circleci/files/backend.yml \
                 --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
                 --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}" \
-                --tags project=udapeople 
+                --tags project=udapeople
 
       - run:
           name: Ensure front-end infrastructure exists
@@ -150,19 +150,7 @@ jobs:
                 --template-file .circleci/files/frontend.yml \
                 --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
                 --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}" \
-                --tags project=udapeople 
-
-      - run:
-          name: Add back-end ip to ansible inventory
-          command: |
-            aws ec2 describe-instances  --query 'Reservations[*].Instances[*].PublicIpAddress'  --output text
-            aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress'  --output text >> ~/project/.circleci/ansible/inventory.txt
-      - persist_to_workspace:
-          root: ~/
-          paths:
-            - project/.circleci/ansible/inventory.txt
-      - destroy-environment:
-          stack: "${CIRCLE_WORKFLOW_ID:0:7}"
+                --tags project=udapeople
 
   configure-infrastructure:
     docker:
@@ -304,7 +292,7 @@ jobs:
             cd .circleci/ansible
             echo "Contents  of the inventory.txt file is -------"
             cat inventory.txt
-            ansible-playbook -i inventory.txt deploy-backend.yml 
+            ansible-playbook -i inventory.txt deploy-backend.yml
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
@@ -339,35 +327,19 @@ jobs:
                 return 1
             fi
 
-   - run:
-          name: Frontend smoke test.
-          command: |
-            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-west-1.amazonaws.com/#/employees"            
-            echo ${URL} 
-            if curl -s ${URL} | grep "Welcome"
-            then
-              return 1
-            else
-              return 1
-            fi
-      # Here's where you will add some code to rollback on failure
-      - destroy-environment:
-          stack: "${CIRCLE_WORKFLOW_ID:0:7}"
-      - revert-migrations
-
 workflows:
   default:
     jobs:
       - build-frontend
       - build-backend
       - test-frontend:
-          requires: ['build-frontend']
+          requires: ["build-frontend"]
       - test-backend:
-          requires: ['build-backend']
+          requires: ["build-backend"]
       - scan-frontend:
-          requires: ['build-frontend']
+          requires: ["build-frontend"]
       - scan-backend:
-          requires: ['build-backend']
+          requires: ["build-backend"]
       - deploy-infrastructure:
           requires: [test-frontend, test-backend, scan-frontend, scan-backend]
       - configure-infrastructure:
