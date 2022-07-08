@@ -317,7 +317,7 @@ jobs:
       
       - attach_workspace:
           at: .
-
+attach_workspace
       - run:
           name: Install dependencies
           working_directory: /tmp
@@ -337,8 +337,8 @@ jobs:
             export ANSIBLE_HOST_KEY_CHECKING=False
             ansible-playbook -i ./.circleci/ansible/inventory.txt .circleci/ansible/deploy-backend.yml --ssh-common-args='-o StrictHostKeyChecking=no'
       - destroy-environment:
-          id: ${CIRCLE_WORKFLOW_ID:0:7}
-
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+        
   # smoke-test:
   #   docker:
   #     - image: python:3.7-alpine3.11
