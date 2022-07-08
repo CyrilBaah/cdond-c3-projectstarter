@@ -317,7 +317,6 @@ jobs:
       
       - attach_workspace:
           at: .
-attach_workspace
       - run:
           name: Install dependencies
           working_directory: /tmp
