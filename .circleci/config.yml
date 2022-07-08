@@ -258,53 +258,89 @@ jobs:
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
+  # deploy-backend:
+  #   docker:
+  #     - image: cimg/node:13.8.0
+  #   steps:
+  #     - checkout
+  #     - run:
+  #         name: Install dependencies
+  #         command: |
+  #           sudo apt -y install python3 tar gzip
+  #     - run:
+  #         name: Install awscli ansible
+  #         command: |
+  #           sudo apt-get -y update
+  #           sudo apt-get -y install awscli ansible
+  #     - attach_workspace:
+  #         at: .
+  #     - add_ssh_keys:
+  #         fingerprints: [8c:8d:70:7f:43:41:eb:bc:b5:77:1e:96:d7:81:a7:50]
+  #     - run:
+  #         name: Install awscli npm node ansible
+  #         command: |
+  #           sudo apt -y install awscli ansible
+  #     - run:
+  #         name: Deploy backend
+  #         command: |
+  #           cd backend
+  #           touch .env
+  #           echo ENVIROMENT=development > ".env"
+  #           echo TYPEORM_CONNECTION=postgres >> ".env"
+  #           echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> ".env"
+  #           echo TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts >> ".env"
+  #           echo TYPEORM_MIGRATIONS=./src/migrations/*.ts >> ".env"
+  #           echo TYPEORM_HOST=$TYPEORM_HOST >> ".env"
+  #           echo TYPEORM_PORT=$TYPEORM_PORT >> ".env"
+  #           echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> ".env"
+  #           echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> ".env"
+  #           echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> ".env"
+  #           npm install
+  #           npm run build
+  #           cd ..
+  #           tar -C backend -czvf artifact.tar.gz .
+  #           cd .circleci/ansible
+  #           echo "Contents  of the inventory.txt file is -------"
+  #           cat inventory.txt
+  #           ansible-playbook -i inventory.txt deploy-backend.yml
+  #     - destroy-environment:
+  #         workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+
+
   deploy-backend:
     docker:
-      - image: cimg/node:13.8.0
+      - image: python:3.7-alpine3.11
     steps:
       - checkout
-      - run:
-          name: Install dependencies
-          command: |
-            sudo apt -y install python3 tar gzip
-      - run:
-          name: Install awscli ansible
-          command: |
-            sudo apt-get -y update
-            sudo apt-get -y install awscli ansible
+      - add_ssh_keys:
+          fingerprints: ["cb:a4:a2:c3:ae:5e:be:7a:bb:5d:bd:ba:74:bf:2f:94"] 
+      
       - attach_workspace:
           at: .
-      - add_ssh_keys:
-          fingerprints: [8c:8d:70:7f:43:41:eb:bc:b5:77:1e:96:d7:81:a7:50]
+
       - run:
-          name: Install awscli npm node ansible
+          name: Install dependencies
+          working_directory: /tmp
           command: |
-            sudo apt -y install awscli ansible
+            apk add --update ansible curl rsync openssh nodejs npm
+            ansible --version
+            pip install awscli
+            aws --version
       - run:
           name: Deploy backend
           command: |
             cd backend
-            touch .env
-            echo ENVIROMENT=development > ".env"
-            echo TYPEORM_CONNECTION=postgres >> ".env"
-            echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> ".env"
-            echo TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts >> ".env"
-            echo TYPEORM_MIGRATIONS=./src/migrations/*.ts >> ".env"
-            echo TYPEORM_HOST=$TYPEORM_HOST >> ".env"
-            echo TYPEORM_PORT=$TYPEORM_PORT >> ".env"
-            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> ".env"
-            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> ".env"
-            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> ".env"
-            npm install
+            npm i
             npm run build
             cd ..
-            tar -C backend -czvf artifact.tar.gz .
-            cd .circleci/ansible
-            echo "Contents  of the inventory.txt file is -------"
-            cat inventory.txt
-            ansible-playbook -i inventory.txt deploy-backend.yml
-      - destroy-environment:
-          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+            cat ./.circleci/ansible/inventory.txt
+            export ANSIBLE_HOST_KEY_CHECKING=False
+            ansible-playbook -i ./.circleci/ansible/inventory.txt .circleci/ansible/deploy-backend.yml --ssh-common-args='-o StrictHostKeyChecking=no'
+     
+      - destroy_environment:
+          id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - revert_migrations:
+          id: ${CIRCLE_WORKFLOW_ID:0:7}
 
   # smoke-test:
   #   docker:
