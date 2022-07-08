@@ -320,12 +320,13 @@ jobs:
             BACKEND_IP=$(aws ec2 describe-instances  --query 'Reservations[*].Instances[*].PublicIpAddress'  --output text)
             API_URL="http://${BACKEND_IP}:3030/api/status"
             echo "${API_URL}"
-            if curl -s ${API_URL} | grep "ok"
-            then
-                return 0
-            else
-                return 1
-            fi
+            sudo chmod +x backend.sh
+            ./backend.sh
+            # if curl -s ${API_URL} | grep "ok"; then
+            #     return 0
+            # else
+            #     return 1
+            # fi
 
 workflows:
   default:
