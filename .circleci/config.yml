@@ -305,33 +305,71 @@ jobs:
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
+  # smoke-test:
+  #   docker:
+  #     - image: python:3.7-alpine3.11
+  #   steps:
+  #     - checkout
+  #     - run:
+  #         name: Install openssh
+  #         command: |
+  #           apk add --update openssh && apk add --update curl
+  #     - run:
+  #         name: Install dependencies
+  #         command: |
+  #           apk add --update tar gzip && apk add --update ansible
+  #           pip install awscli
+  #     - run:
+  #         name: Install node
+  #         command: |
+  #           apk add --update nodejs npm
+  #     - run:
+  #         name: Backend smoke test.
+  #         command: |
+  #           BACKEND_IP=$(aws ec2 describe-instances --filters Name=tag:project,Values=udapeople-${CIRCLE_WORKFLOW_ID:0:7} --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
+  #           API_URL="http://${BACKEND_IP}:3030/api/status"
+  #           echo "${API_URL}"
+  #           chmod +x backend.sh
+  #           ./backend.sh
+  #           # if curl -s ${API_URL} | grep "ok"; then
+  #           #     return 0
+  #           # else
+  #           #     return 1
+  #           # fi
+
   smoke-test:
     docker:
-      - image: python:3.7-alpine3.11
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - run:
-          name: Install openssh
-          command: |
-            apk add --update openssh && apk add --update curl
-      - run:
           name: Install dependencies
           command: |
-            apk add --update tar gzip && apk add --update ansible
-            pip install awscli
+            sudo apt-get -y update
+            sudo apt-get -y install curl nodejs npm awscli
       - run:
-          name: Install node
+          name: Get backend url
           command: |
-            apk add --update nodejs npm
+            export BACKEND_IP=$(aws ec2 describe-instances \
+                  --query 'Reservations[*].Instances[*].PublicIpAddress' \
+                  --filters "Name=tag:project,Values=udapeople-${CIRCLE_WORKFLOW_ID:0:7}" \
+                  --output text)
+            echo $BACKEND_IP
       - run:
           name: Backend smoke test.
           command: |
-            BACKEND_IP=$(aws ec2 describe-instances --filters Name=tag:project,Values=udapeople-${CIRCLE_WORKFLOW_ID:0:7} --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
-            API_URL="http://${BACKEND_IP}:3030/api/status"
+            # sudo chmod 777 ./backend.sh
+            # ./backend.sh
+            #Fetch and prepare the BACKEND_IP env var
+            export BACKEND_IP=$(aws ec2 describe-instances \
+                  --query 'Reservations[*].Instances[*].PublicIpAddress' \
+                  --filters "Name=tag:project,Values=udapeople-${CIRCLE_WORKFLOW_ID:0:7}" \
+                  --output text)
+            export API_URL="http://${BACKEND_IP}:3030"
             echo "${API_URL}"
-            chmod +x backend.sh
+            sudo chmod +x ./backend.sh
             ./backend.sh
-            # if curl -s ${API_URL} | grep "ok"; then
+            # if curl "${API_URL}/api/status" | grep "ok"; then
             #     return 0
             # else
             #     return 1
