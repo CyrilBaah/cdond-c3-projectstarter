@@ -368,13 +368,13 @@ jobs:
                   --output text)
             export API_URL="http://${BACKEND_IP}:3030"
             echo "${API_URL}"
-            # sudo chmod +x ./backend.sh
-            # ./backend.sh
-            if curl "${API_URL}/api/status" | grep "ok"; then
-                return 0
-            else
-                return 1
-            fi
+            sudo chmod +x ./backend.sh
+            ./backend.sh
+            # if curl "${API_URL}/api/status" | grep "ok"; then
+            #     return 0
+            # else
+            #     return 1
+            # fi
 
 workflows:
   default:
