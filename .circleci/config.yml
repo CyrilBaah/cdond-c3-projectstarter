@@ -407,6 +407,12 @@ jobs:
             # else
             #     return 1
             # fi
+      - run:
+          name: Frontend smoke test.
+          command: |
+            sudo chmod +x ./frontend.sh
+            ./frontend.sh
+
 
 workflows:
   default:
