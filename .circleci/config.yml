@@ -472,6 +472,11 @@ jobs:
                   --output text)
             echo $BACKEND_IP
       - run:
+          name: Frontend smoke test.
+          command: |
+            sudo chmod +x ./frontend.sh
+            ./frontend.sh
+      - run:
           name: Backend smoke test.
           command: |
             # sudo chmod 777 ./backend.sh
@@ -490,15 +495,11 @@ jobs:
             # else
             #     return 1
             # fi
-      - run:
-          name: Frontend smoke test.
-          command: |
-            sudo chmod +x ./frontend.sh
-            ./frontend.sh
       # - revert-migrations:
       #     workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
       # - destroy-environment:
       #     workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+
 
 
 workflows:

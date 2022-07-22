@@ -1,6 +1,6 @@
 #!/bin/bash
 function a(){
-    if curl -s ${API_URL} | grep "ok"; then
+    if curl "${API_URL}/api/status" | grep "ok"; then
         return 0
     else
         return 1
