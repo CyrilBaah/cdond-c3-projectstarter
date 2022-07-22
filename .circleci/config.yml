@@ -193,7 +193,7 @@ jobs:
     steps:
       - checkout
       - add_ssh_keys:
-          fingerprints: [8c:8d:70:7f:43:41:eb:bc:b5:77:1e:96:d7:81:a7:50]
+          fingerprints: [cb:23:cc:13:88:e6:db:e4:8e:e1:34:fd:0a:1d:82:c4
       - run:
           name: Install dependencies
           command: |
@@ -300,7 +300,7 @@ jobs:
   #     - attach_workspace:
   #         at: .
   #     - add_ssh_keys:
-  #         fingerprints: [8c:8d:70:7f:43:41:eb:bc:b5:77:1e:96:d7:81:a7:50]
+  #         fingerprints: [cb:23:cc:13:88:e6:db:e4:8e:e1:34:fd:0a:1d:82:c4
   #     - run:
   #         name: Install awscli npm node ansible
   #         command: |
@@ -338,7 +338,7 @@ jobs:
   #   steps:
   #     - checkout
   #     - add_ssh_keys:
-  #         fingerprints: [8c:8d:70:7f:43:41:eb:bc:b5:77:1e:96:d7:81:a7:50] 
+  #         fingerprints: [cb:23:cc:13:88:e6:db:e4:8e:e1:34:fd:0a:1d:82:c4 
       
   #     - attach_workspace:
   #         at: .
@@ -385,7 +385,7 @@ jobs:
       - attach_workspace:
           at: .
       - add_ssh_keys:
-          fingerprints: ["8c:8d:70:7f:43:41:eb:bc:b5:77:1e:96:d7:81:a7:50"] 
+          fingerprints: [cb:23:cc:13:88:e6:db:e4:8e:e1:34:fd:0a:1d:82:c4] 
 
       - run:
           name: Install awscli npm node ansible
