@@ -350,6 +350,7 @@ jobs:
             ansible --version
             pip install awscli
             aws --version
+            
       - run:
           name: Deploy backend
           command: |
