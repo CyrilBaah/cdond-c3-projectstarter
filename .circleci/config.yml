@@ -181,6 +181,13 @@ jobs:
                   --output text >> inventory.txt
             cat inventory.txt
 
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .circleci/ansible/inventory.txt
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+
   configure-infrastructure:
     docker:
       - image: cimg/python:3.9.13
@@ -431,6 +438,10 @@ jobs:
           command: |
             sudo chmod +x ./frontend.sh
             ./frontend.sh
+      - revert-migrations:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
 
 workflows:
