@@ -12,14 +12,17 @@
 - name: "list directory"
   shell: |
     ls -la
+    
 - name: "list directory"
   shell: |
     cat .env
+
 - name: "execution"
   shell: |
     npm install
     pm2 stop default
     sudo pm2 start npm -- start
+
   environment:
     TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_CONNECTION')}}"
     TYPEORM_ENTITIES: "{{ lookup('env', 'TYPEORM_ENTITIES')}}"
