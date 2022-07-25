@@ -425,6 +425,40 @@ jobs:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
 
+  cleanup:
+      docker:
+        - image: cimg/node:13.8.0
+      steps:
+        - checkout
+        - run:
+            name: Install dependencies
+            command: |
+              sudo apt-get -y update
+              sudo apt-get -y install curl nodejs npm awscli
+        - attach_workspace:
+            at: .
+        - run:
+            name: Get old stack workflow id and Remove old stacks and files
+            command: |
+              # export OldWorkflowID=$(aws cloudformation \
+              #         list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+              #         --no-paginate --output text)
+              OldWorkflowID=$(cat ./OldWorkflowID.txt)
+              cat ./OldWorkflowID.txt
+              echo OldWorkflowID: "${OldWorkflowID}"
+              echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
+              # export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
+              #         --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) 
+              # echo Stack names: "${STACKS[@]}"  
+              echo ${OldWorkflowID}
+              # chmod +x ./delete.sh
+              echo ${OldWorkflowID}
+              aws s3 ls
+              aws s3 rb s3://udapeople-${OldWorkflowID} --force --region us-east-1
+              aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
+              aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
+
+
 workflows:
   default:
     jobs:
@@ -452,3 +486,5 @@ workflows:
           requires: [deploy-backend, deploy-frontend]
       - cloudfront-update:
           requires: [smoke-test]
+      - cleanup:
+          requires: [cloudfront-update]
