@@ -254,24 +254,34 @@ jobs:
 
   deploy-frontend:
     docker:
-      - image: python:3.7-alpine3.11
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - run:
           name: Install tar gzip
           command: |
-            apk add --update nodejs nodejs-npm tar gzip curl
-            pip install awscli
+            sudo apt -y install python3 tar gzip
       - attach_workspace:
           at: .
       - run:
+          name: Install awscli ansible
+          command: |
+            sudo apt-get -y update
+            sudo apt-get -y install awscli ansible
+      - run:
           name: Get backend url
           command: |
-            export BACKEND_IP=$(aws ec2 describe-instances --filters Name=tag:project,Values=udapeople-${CIRCLE_WORKFLOW_ID:0:7} --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
+            export BACKEND_IP=$(aws ec2 describe-instances \
+                  --query 'Reservations[*].Instances[*].PublicIpAddress' \
+                  --filters "Name=tag:project,Values=udapeople-${CIRCLE_WORKFLOW_ID:0:7}" \
+                  --output text)
             export API_URL="http://${BACKEND_IP}:3030"
             echo "API_URL = ${API_URL}"
-            echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
-            cat frontend/.env
+            cd frontend
+            touch .env
+            echo API_URL="http://${BACKEND_IP}:3030" >> .env
+            echo "this is the env file"
+            cat .env
       - run:
           name: Deploy frontend objects
           command: |
@@ -283,7 +293,6 @@ jobs:
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
- 
   deploy-backend:
     docker:
       - image: cimg/node:13.8.0
