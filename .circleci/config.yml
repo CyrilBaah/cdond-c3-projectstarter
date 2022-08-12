@@ -25,7 +25,7 @@ commands:
     description: Revert the last migration if successfully run in the current workflow.
     parameters:
         workflow_id:
-            type: string 
+            type: string     
     steps:
       - run:
           name: Revert migrations
@@ -241,14 +241,16 @@ jobs:
             cd backend
             npm install
             npm run migrations > migrations_dump.txt
-      # - run:
-      #     name: Send migration results to memstash
-      #     command: |
-      #       sudo apt-get update && sudo apt-get install -y ca-certificates
-      #       if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
-      #       then
-      #           curl https://kvdb.io/LcFmjgqL7QtkPSgdTFjBUi/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
-      #       fi
+      - run:
+          name: Send migration results to kvdb
+          command: |
+              if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
+              then
+                  # If you are using memstash.io, generate the token "7933fe63-4687-4fa1-8426-aa25aa1730ec" on the website
+                  # curl -H "Content-Type: text/plain" -H "token: 7933fe63-4687-4fa1-8426-aa25aa1730ec" --request PUT --data "1" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID:0:7}
+                  # If you are using kvdb.io, generate the bucket ID "9GE4jRtKznmVKRfvdBABBe" in your local terminal first
+                  curl https://kvdb.io/LcFmjgqL7QtkPSgdTFjBUi/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+              fi
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
@@ -491,9 +493,9 @@ workflows:
           requires: [run-migrations]
       - deploy-backend:
           requires: [run-migrations]
-      # - smoke-test:
-      #     requires: [deploy-backend, deploy-frontend]
-      # - cloudfront-update:
-      #     requires: [smoke-test]
-      # - cleanup:
-      #     requires: [cloudfront-update]
+      - smoke-test:
+          requires: [deploy-backend, deploy-frontend]
+      - cloudfront-update:
+          requires: [smoke-test]
+      - cleanup:
+          requires: [cloudfront-update]
