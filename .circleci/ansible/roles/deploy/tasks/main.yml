@@ -17,7 +17,7 @@
   shell: |
     npm install
     sudo pm2 start npm -- start
-
+    
   environment:
     TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_CONNECTION')}}"
     TYPEORM_ENTITIES: "{{ lookup('env', 'TYPEORM_ENTITIES')}}"
